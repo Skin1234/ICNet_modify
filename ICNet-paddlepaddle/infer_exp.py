@@ -245,8 +245,8 @@ def main():
     print("cut images saved in :" + cut_path)
     	
     	
-    check_gpu(args.use_gpu)
-    print('predicting......')
+    #check_gpu(args.use_gpu)
+    #print('predicting......')
     #predicted_images = infer(args,cut_path,data_list,comb_path)
     	#print('combining......')
     	#image_comb(h_step,w_step,h_rest,w_rest,img_shape,img_exp_shape,outname,comb_path)
