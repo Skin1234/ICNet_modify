@@ -125,6 +125,7 @@ def infer(args,cut_path,image_list,comb_path):
     if not os.path.isdir(args.out_path):
         os.makedirs(args.out_path)
 
+    pre_images = []
     for line in image_list:
         # image_file = args.images_path + "/" + line.strip()
         # filename = os.path.basename(image_file)
@@ -140,10 +141,20 @@ def infer(args,cut_path,image_list,comb_path):
         result = exe.run(inference_program,
                          feed={"image": image_t},
                          fetch_list=[predict])
-        cv2.imwrite(comb_path + "/" + line + "_result.png",
+        pre_images.append(result)
+                         
+        cv2.imwrite(comb_path + "/" + line,
                     color(result[0]))
     print("predicted images saved in :"+comb_path)
+    return pre_images
+    
+    
+    
+    
 def image_cut(input,output):
+    global GLOBAL_SAVING_CUT_INDEX
+    image_name = GLOBAL_SAVING_CUT_INDEX
+
     data_list =[]
     path = input
     path_out = output
@@ -169,9 +180,13 @@ def image_cut(input,output):
         image_list.append(img_exp[-256:, (w * 128):(w * 128 + 256), :])
     image_list.append(img_exp[-256:, -256:, :])
     for i in range(len(image_list)):
-        cv2.imwrite(path_out + '/' + str(i) + '.png', image_list[i])
-        data_list.append(str(i) + '.png')
-    print("cut images saved in :" + path_out)
+    	
+        cv2.imwrite(path_out + '/' + str(image_name) + '.png', image_list[i])
+        image_name +=1
+        data_list.append(str(image_name) + '.png')
+    
+    
+    GLOBAL_SAVING_CUT_INDEX = image_name
     return h_step,w_step,h_rest,w_rest,img_shape,img_exp_shape,data_list
 
 
@@ -208,18 +223,35 @@ def image_comb(h_step,w_step,h_rest,w_rest,img_shape,img_exp_shape,outname,inpat
 def main():
     args = parser.parse_args()
     print_arguments(args)
-    in_path = args.images_path
+    
     print('cutting......')
     # in_path = 'input.png'
     cut_path = 'cut_map'
     comb_path = 'comb_map'
-    outname = in_path + '_predict.png'
-    h_step,w_step,h_rest,w_rest,img_shape,img_exp_shape,data_list = image_cut(in_path,cut_path)
+    
+    
+    global GLOBAL_SAVING_CUT_INDEX
+    GLOBAL_SAVING_CUT_INDEX = 0
+    
+    data_list = []
+    images_list = os.listdir(args.images_path)
+    for file_name in images_list:
+    	in_path = args.images_path + file_name
+    	outname = in_path + '_predict.png' 
+    	
+    	h_step,w_step,h_rest,w_rest,img_shape,img_exp_shape,one_image_data_list = image_cut(in_path,cut_path)
+    	
+    	data_list = data_list + one_image_data_list
+    print("cut images saved in :" + cut_path)
+    	
+    	
     check_gpu(args.use_gpu)
     print('predicting......')
-    infer(args,cut_path,data_list,comb_path)
-    print('combining......')
-    image_comb(h_step,w_step,h_rest,w_rest,img_shape,img_exp_shape,outname,comb_path)
+    #predicted_images = infer(args,cut_path,data_list,comb_path)
+    	#print('combining......')
+    	#image_comb(h_step,w_step,h_rest,w_rest,img_shape,img_exp_shape,outname,comb_path)
+    	
+
 
 if __name__ == "__main__":
     main()
